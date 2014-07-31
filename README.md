@@ -1,4 +1,4 @@
-obstacle_detection
+Obstacle Detection using PCL and ROS
 ==================
 
-Detection stack using PCL and ROS. 
+How to use coming eventually... 
