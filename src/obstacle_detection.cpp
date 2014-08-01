@@ -23,7 +23,6 @@
 {}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 */
 
-#include <ros/ros.h>
 #include <iostream>
 // PCL specific includes
 #include <pcl/ModelCoefficients.h>
