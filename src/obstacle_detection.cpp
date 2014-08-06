@@ -209,7 +209,7 @@ int
 main (int argc, char** argv)
 {
   // Initialize ROS
-  ros::init (argc, argv, "my_pcl_tutorial");
+  ros::init (argc, argv, "obstacle_detection");
   ros::NodeHandle nh;
 
   // Create a ROS subscriber for the input point cloud
