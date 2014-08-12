@@ -23,6 +23,7 @@
 {}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 */
 
+#include <ros/ros.h>
 #include <iostream>
 // PCL specific includes
 #include <pcl/ModelCoefficients.h>
@@ -78,9 +79,8 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   pcl::PassThrough<pcl::PCLPointCloud2> pass;
   pass.setInputCloud(cloudPtr);
   pass.setFilterFieldName("z");
-  pass.setFilterLimits(0.0, 2.0);
+  pass.setFilterLimits(0.0, 1.3);
   pass.filter(*cloud);
-
 
   ///////////////////////////////////////////////////
   //                                               //
@@ -89,8 +89,19 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   ///////////////////////////////////////////////////
   pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
   sor.setInputCloud (cloudPtr);
-  sor.setLeafSize (0.04, 0.04, 0.04);
+  sor.setLeafSize (0.028, 0.028, 0.028);
   sor.filter (*cloud);
+
+  ///////////////////////////////////////////////////
+  //                                               //
+  //              Filter out the noise             //
+  //                                               //                            
+  ///////////////////////////////////////////////////
+  pcl::StatisticalOutlierRemoval<pcl::PCLPointCloud2> sor2;
+  sor2.setInputCloud(cloudPtr);
+  sor2.setMeanK(80);
+  sor2.setStddevMulThresh(0.15);
+  sor2.filter(*cloud);
 
   ///////////////////////////////////////////////////
   //                                               //
@@ -133,7 +144,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   seg.setOptimizeCoefficients (true);
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold (0.015);
+  seg.setDistanceThreshold (0.01);
   seg.setInputCloud (groundcloudPtr);
   seg.segment (*ground_indices, *ground_coefficients);
   ROS_INFO("Ground cloud before filtering: %d data points.", ground_cloud->height * ground_cloud->width); // Debug Print
@@ -184,23 +195,12 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
 
   ///////////////////////////////////////////////////
   //                                               //
-  //              Filter out the noise             //
-  //                                               //                            
-  ///////////////////////////////////////////////////
-  pcl::StatisticalOutlierRemoval<pcl::PCLPointCloud2> sor2;
-  sor2.setInputCloud(cloudOutPtr);
-  sor2.setMeanK(50);
-  sor2.setStddevMulThresh(1.0);
-  sor2.filter(cloud_filtered_out);
-
-
-  ///////////////////////////////////////////////////
-  //                                               //
   //          Conversion out and publish           //
   //                                               //                            
   ///////////////////////////////////////////////////
   sensor_msgs::PointCloud2 output;
-  pcl_conversions::moveFromPCL(cloud_filtered_out, output);
+  // pcl_conversions::moveFromPCL(cloud_filtered_out, output);
+  pcl_conversions::moveFromPCL(*cloud_out, output);
     // Publish the data
   pub.publish (output);
 }
