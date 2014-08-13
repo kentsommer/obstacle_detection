@@ -33,6 +33,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
 #include <pcl_ros/segmentation/sac_segmentation.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/filters/project_inliers.h>
@@ -46,6 +47,12 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
+#include <pcl/filters/radius_outlier_removal.h>
+
+//Clustering 
+#include <pcl/features/normal_3d.h>
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/features/normal_3d.h>
 
 // Type Defs
 typedef pcl::PointXYZ PointT;
@@ -54,6 +61,7 @@ typedef pcl::PointCloud<PointT> CloudT;
 using namespace std;
 
 ros::Publisher pub;
+ros::Publisher pub_cluster;
 
 void 
 cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
@@ -70,7 +78,6 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   ///////////////////////////////////////////////////
   pcl_conversions::toPCL(*cloud_msg, *cloud);
 
-
   ///////////////////////////////////////////////////
   //                                               //
   //             Passthrough filter                //
@@ -79,9 +86,8 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   pcl::PassThrough<pcl::PCLPointCloud2> pass;
   pass.setInputCloud(cloudPtr);
   pass.setFilterFieldName("z");
-  pass.setFilterLimits(0.0, 2.0);
+  pass.setFilterLimits(0.5, 4); //1.3 works well
   pass.filter(*cloud);
-
 
   ///////////////////////////////////////////////////
   //                                               //
@@ -90,7 +96,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   ///////////////////////////////////////////////////
   pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
   sor.setInputCloud (cloudPtr);
-  sor.setLeafSize (0.04, 0.04, 0.04);
+  sor.setLeafSize (0.028, 0.028, 0.028);  //0.028 works well
   sor.filter (*cloud);
 
   ///////////////////////////////////////////////////
@@ -134,7 +140,8 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   seg.setOptimizeCoefficients (true);
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold (0.015);
+  seg.setMaxIterations (200);
+  seg.setDistanceThreshold (0.014); // 0.0195
   seg.setInputCloud (groundcloudPtr);
   seg.segment (*ground_indices, *ground_coefficients);
   ROS_INFO("Ground cloud before filtering: %d data points.", ground_cloud->height * ground_cloud->width); // Debug Print
@@ -169,7 +176,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   pcl::ExtractPolygonalPrismData<pcl::PointXYZ> hull_limiter;
   hull_limiter.setInputCloud(objectpointsPtr);
   hull_limiter.setInputPlanarHull(groundhullPtr);
-  hull_limiter.setHeightLimits(0, 4.0);
+  hull_limiter.setHeightLimits(0, 4); //0 , 4
   hull_limiter.segment(*object_indices);
 
   pcl::ExtractIndices<pcl::PointXYZ> object_extractor;
@@ -181,18 +188,18 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   //Convert pcl::CloudT back to PointCloud2 for last filter step
   pcl::PCLPointCloud2* cloud_out = new pcl::PCLPointCloud2; 
   pcl::PCLPointCloud2ConstPtr cloudOutPtr(cloud_out);
-  pcl::toPCLPointCloud2(*object_points, *cloud_out);
+  pcl::toPCLPointCloud2(*object_points, *cloud_out); // *object_points
 
   ///////////////////////////////////////////////////
   //                                               //
-  //              Filter out the noise             //
+  //              Filter out the noise v2          //
   //                                               //                            
   ///////////////////////////////////////////////////
-  pcl::StatisticalOutlierRemoval<pcl::PCLPointCloud2> sor2;
-  sor2.setInputCloud(cloudOutPtr);
-  sor2.setMeanK(50);
-  sor2.setStddevMulThresh(1.0);
-  sor2.filter(cloud_filtered_out);
+  pcl::RadiusOutlierRemoval<pcl::PCLPointCloud2> ror;
+  ror.setInputCloud(cloudOutPtr);
+  ror.setMinNeighborsInRadius(5);
+  ror.setRadiusSearch(0.03);
+  ror.filter(*cloud_out);
 
 
   ///////////////////////////////////////////////////
@@ -201,7 +208,8 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   //                                               //                            
   ///////////////////////////////////////////////////
   sensor_msgs::PointCloud2 output;
-  pcl_conversions::moveFromPCL(cloud_filtered_out, output);
+  //pcl_conversions::moveFromPCL(cloud_filtered_out, output);
+  pcl_conversions::moveFromPCL(*cloud_out, output);   /////TEMP TESTING
     // Publish the data
   pub.publish (output);
 }
@@ -210,13 +218,12 @@ int
 main (int argc, char** argv)
 {
   // Initialize ROS
-  ros::init (argc, argv, "my_pcl_tutorial");
+  ros::init (argc, argv, "obstacle_detection");
   ros::NodeHandle nh;
 
   // Create a ROS subscriber for the input point cloud
   ros::Subscriber sub = nh.subscribe<sensor_msgs::PointCloud2> ("input", 10, cloud_cb);
 
-  // Create a ROS publisher for the output point cloud
   pub = nh.advertise<sensor_msgs::PointCloud2> ("output", 10);
 
   // Spin
