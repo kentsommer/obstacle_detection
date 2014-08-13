@@ -86,7 +86,11 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   pcl::PassThrough<pcl::PCLPointCloud2> pass;
   pass.setInputCloud(cloudPtr);
   pass.setFilterFieldName("z");
+<<<<<<< HEAD
   pass.setFilterLimits(0.5, 4); //1.3 works well
+=======
+  pass.setFilterLimits(0.0, 1.3);
+>>>>>>> 9e128cf1ec241487dea610cd06664488516f7581
   pass.filter(*cloud);
 
   ///////////////////////////////////////////////////
@@ -96,8 +100,23 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   ///////////////////////////////////////////////////
   pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
   sor.setInputCloud (cloudPtr);
+<<<<<<< HEAD
   sor.setLeafSize (0.028, 0.028, 0.028);  //0.028 works well
+=======
+  sor.setLeafSize (0.028, 0.028, 0.028);
+>>>>>>> 9e128cf1ec241487dea610cd06664488516f7581
   sor.filter (*cloud);
+
+  ///////////////////////////////////////////////////
+  //                                               //
+  //              Filter out the noise             //
+  //                                               //                            
+  ///////////////////////////////////////////////////
+  pcl::StatisticalOutlierRemoval<pcl::PCLPointCloud2> sor2;
+  sor2.setInputCloud(cloudPtr);
+  sor2.setMeanK(80);
+  sor2.setStddevMulThresh(0.15);
+  sor2.filter(*cloud);
 
   ///////////////////////////////////////////////////
   //                                               //
@@ -140,8 +159,12 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   seg.setOptimizeCoefficients (true);
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
+<<<<<<< HEAD
   seg.setMaxIterations (200);
   seg.setDistanceThreshold (0.014); // 0.0195
+=======
+  seg.setDistanceThreshold (0.01);
+>>>>>>> 9e128cf1ec241487dea610cd06664488516f7581
   seg.setInputCloud (groundcloudPtr);
   seg.segment (*ground_indices, *ground_coefficients);
   ROS_INFO("Ground cloud before filtering: %d data points.", ground_cloud->height * ground_cloud->width); // Debug Print
@@ -192,6 +215,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
 
   ///////////////////////////////////////////////////
   //                                               //
+<<<<<<< HEAD
   //              Filter out the noise v2          //
   //                                               //                            
   ///////////////////////////////////////////////////
@@ -204,12 +228,19 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
 
   ///////////////////////////////////////////////////
   //                                               //
+=======
+>>>>>>> 9e128cf1ec241487dea610cd06664488516f7581
   //          Conversion out and publish           //
   //                                               //                            
   ///////////////////////////////////////////////////
   sensor_msgs::PointCloud2 output;
+<<<<<<< HEAD
   //pcl_conversions::moveFromPCL(cloud_filtered_out, output);
   pcl_conversions::moveFromPCL(*cloud_out, output);   /////TEMP TESTING
+=======
+  // pcl_conversions::moveFromPCL(cloud_filtered_out, output);
+  pcl_conversions::moveFromPCL(*cloud_out, output);
+>>>>>>> 9e128cf1ec241487dea610cd06664488516f7581
     // Publish the data
   pub.publish (output);
 }
