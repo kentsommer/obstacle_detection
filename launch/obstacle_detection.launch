@@ -1,0 +1,13 @@
+<!-- 
+  Launches the obstacle detection node
+ -->
+ 
+<launch>
+  <arg name="input_topic"   default="camera/depth/points"/>
+  <arg name="output_topic"  default="filtered_pc"/>
+  
+  <node pkg="obstacle_detection" type="obstacle_detection" name="obstacle_detection">
+    <remap from="input"   to="$(arg input_topic)"/>
+    <remap from="output"  to="$(arg output_topic)"/>
+  </node>
+</launch>
