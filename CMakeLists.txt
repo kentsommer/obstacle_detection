@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS pcl_conversions
 
 # find PCL 1.7
 find_package(PCL 1.7 REQUIRED)
-include_directories(BEFORE ${PCL_INCLUDE_DIRS})
+include_directories(BEFORE ${PCL_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
