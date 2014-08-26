@@ -6,10 +6,12 @@ find_package(catkin REQUIRED COMPONENTS pcl_conversions
                     					pcl_ros
                     					roscpp
                     					sensor_msgs)
+                    					
+find_package(Boost REQUIRED)
 
 # find PCL 1.7
 find_package(PCL 1.7 REQUIRED)
-include_directories(BEFORE ${PCL_INCLUDE_DIRS})
+include_directories(BEFORE ${PCL_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 

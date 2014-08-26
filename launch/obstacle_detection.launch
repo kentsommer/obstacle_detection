@@ -3,11 +3,13 @@
  -->
  
 <launch>
-  <arg name="input_topic"   default="camera/depth/points"/>
-  <arg name="output_topic"  default="filtered_pc"/>
+  <arg name="input_topic"                 default="camera/depth/points"/>
+  <arg name="filtered_obstacles_topic"    default="filtered_obstacles"/>
+  <arg name="filtered_ground_plane_topic" default="filtered_ground_plane"/>
   
   <node pkg="obstacle_detection" type="obstacle_detection" name="obstacle_detection">
-    <remap from="input"   to="$(arg input_topic)"/>
-    <remap from="output"  to="$(arg output_topic)"/>
+    <remap from="input"                       to="$(arg input_topic)"/>
+    <remap from="filtered_obstacles"          to="$(arg filtered_obstacles_topic)"/>
+    <remap from="filtered_ground_plane_topic" to="$(arg filtered_ground_plane_topic)"/>
   </node>
 </launch>
