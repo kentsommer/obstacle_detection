@@ -208,11 +208,14 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   //              Filter out the noise v2          //
   //                                               //
   ///////////////////////////////////////////////////
-  pcl::RadiusOutlierRemoval<pcl::PCLPointCloud2> ror;
-  ror.setInputCloud(cloudOutPtr);
-  ror.setMinNeighborsInRadius(5);
-  ror.setRadiusSearch(0.03);
-  ror.filter(*cloud_out);
+  if ((cloudOutPtr->height * cloudOutPtr->width) > 0)
+  {
+    pcl::RadiusOutlierRemoval<pcl::PCLPointCloud2> ror;
+    ror.setInputCloud(cloudOutPtr);
+    ror.setMinNeighborsInRadius(5);
+    ror.setRadiusSearch(0.03);
+    ror.filter(*cloud_out);
+  }
 
   ///////////////////////////////////////////////////
   //                                               //
