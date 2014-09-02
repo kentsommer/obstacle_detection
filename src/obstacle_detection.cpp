@@ -67,6 +67,7 @@ using namespace std;
 ros::Publisher pub_obstacles;
 ros::Publisher pub_ground_plane;
 ros::Publisher pub_cluster;
+double downsample_leaf_size;
 
 void
 cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
@@ -101,7 +102,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   ///////////////////////////////////////////////////
   pcl::VoxelGrid<pcl::PCLPointCloud2> sor;
   sor.setInputCloud (cloudPtr);
-  sor.setLeafSize (0.028, 0.028, 0.028);
+  sor.setLeafSize (downsample_leaf_size, downsample_leaf_size, downsample_leaf_size);
   sor.filter (*cloud);
 
   ///////////////////////////////////////////////////
@@ -231,7 +232,11 @@ int main (int argc, char** argv)
 {
   // Initialize ROS
   ros::init (argc, argv, "obstacle_detection");
-  ros::NodeHandle nh;
+  ros::NodeHandle nh, nh_priv("~");
+
+  downsample_leaf_size = 0.01; // 1cm
+  nh_priv.getParam("downsample_leaf_size", downsample_leaf_size);
+  ROS_INFO_STREAM("obstacle detection: using a leaf size of '" << downsample_leaf_size << "' m for downsampling.");
 
   // Create a ROS subscriber for the input point cloud
   ros::Subscriber sub = nh.subscribe<sensor_msgs::PointCloud2> ("input", 1, cloud_cb);
